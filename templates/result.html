@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Benford's Law Validation Result</title>
+    <title>Benford's Law Analysis - Results</title>
 </head>
 <body>
-    <h1>Benford's Law Validation Result</h1>
-    <img src="{{ url_for('static', filename='result.png') }}" alt="Result Graph">
+    <h1>Benford's Law Analysis - Results</h1>
+    <h3>P-value: {{ p_value }}</h3>
+    <img src="{{ url_for('static', filename='plot.png') }}" alt="Distribution Plot">
 </body>
 </html>

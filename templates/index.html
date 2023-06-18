@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Benford's Law Validation</title>
+    <title>Benford's Law Analysis</title>
 </head>
 <body>
-    <h1>Benford's Law Validation</h1>
-    <form method="POST" enctype="multipart/form-data">
+    <h1>Benford's Law Analysis</h1>
+    <form action="/" method="post" enctype="multipart/form-data">
         <input type="file" name="file" accept=".csv">
-        <input type="text" name="target_column" placeholder="Target Column">
-        <input type="submit" value="Validate">
+        <br>
+        <input type="text" name="column_name" placeholder="Column Name">
+        <br>
+        <input type="submit" value="Analyze">
     </form>
+    {% if error %}
+    <p>{{ error }}</p>
+    {% endif %}
 </body>
 </html>

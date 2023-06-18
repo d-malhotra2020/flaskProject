@@ -1,54 +1,53 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template, request
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 app = Flask(__name__)
+
+def get_first_digit(number):
+    while number >= 10:
+        number = number // 10
+    return number
+
+def benford_law(data):
+    observed = [get_first_digit(number) for number in data]
+    expected = [np.log10(1 + 1 / d) for d in range(1, 10)]
+    return observed, expected
+
+def validate_benford(observed, expected):
+    chi_squared = sum((o - e) ** 2 / e for o, e in zip(observed, expected))
+    p_value = 1 - chi_squared
+    return p_value
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         file = request.files['file']
-        target_column = request.form.get('target_column')
-        if file and target_column:
+        column_name = request.form['column_name']
+        if file:
             try:
                 df = pd.read_csv(file)
-                if target_column in df.columns:
-                    observed_data = df[target_column].dropna()
-                    if len(observed_data) > 0:
-                        observed_distribution = calculate_distribution(observed_data)
-                        expected_distribution = calculate_benford_distribution()
-                        plot_graph(observed_distribution, expected_distribution)
-                        return render_template('result.html')
-                    else:
-                        return "No data found in the target column."
-                else:
-                    return "Target column not found in the file."
+                data = df[column_name].dropna().astype(int).tolist()
+                observed, expected = benford_law(data)
+                p_value = validate_benford(observed, expected)
+
+                plt.bar(range(1, 10), observed, label='Observed', alpha=0.7)
+                plt.plot(range(1, 10), expected, 'r-', label='Expected')
+                plt.xlabel('First Digit')
+                plt.ylabel('Frequency')
+                plt.legend()
+                plt.title('Benford\'s Law Analysis')
+
+                plt.savefig('static/plot.png')  # Save the plot as an image
+                plt.close()
+
+                return render_template('result.html', p_value=p_value)
+
             except Exception as e:
-                return str(e)
-        else:
-            return "Please provide a file and a target column."
+                return render_template('index.html', error=str(e))
+
     return render_template('index.html')
-
-def calculate_distribution(data):
-    first_digits = data.astype(str).str[0].astype(int)
-    distribution = pd.Series(np.log10(1 + 1 / first_digits.value_counts(normalize=True)), index=range(1, 10))
-    return distribution
-
-def calculate_benford_distribution():
-    benford_distribution = pd.Series(np.log10(1 + 1 / np.arange(1, 10)), index=range(1, 10))
-    return benford_distribution
-
-def plot_graph(observed_distribution, expected_distribution):
-    plt.bar(observed_distribution.index, observed_distribution.values, alpha=0.5, color='b', label='Observed')
-    plt.plot(expected_distribution.index, expected_distribution.values, 'ro-', label='Expected')
-    plt.xlabel('First Digit')
-    plt.ylabel('Frequency (log scale)')
-    plt.yscale('log')
-    plt.title('Benford\'s Law Validation')
-    plt.legend()
-    plt.savefig('static/result.png')
-    plt.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
